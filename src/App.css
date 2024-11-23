@@ -1,0 +1,13 @@
+#root {
+  margin: 0 auto;
+  padding: 1rem;
+  text-align: center;
+}
+
+table {
+  min-width: 85vw;
+}
+
+.MuiInputBase-input + span {
+  color: white;
+}
