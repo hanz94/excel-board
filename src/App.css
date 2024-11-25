@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 #root {
   margin: 0 auto;
   padding: 1rem;
@@ -6,8 +10,4 @@
 
 table {
   min-width: 85vw;
-}
-
-.MuiInputBase-input + span {
-  color: white;
 }
