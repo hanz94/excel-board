@@ -1,11 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DarkModeSwitch } from 'react-toggle-dark-mode';
 import '../App.css';
-import { FormControl, InputLabel, Select, MenuItem, TextField, Typography } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem, TextField, Typography, Checkbox, Box } from '@mui/material';
 import * as alasql from 'alasql';
 import * as XLSX from 'xlsx';
 import { MuiFileInput } from 'mui-file-input';
 import { useThemeContext } from '../contexts/ThemeContext';
+import { useModalContext } from '../contexts/ModalContext';
+import kulLogoBlack from '../assets/kul_logo-black.jpg';
+
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { DataGrid } from '@mui/x-data-grid';
+import { plPL } from '@mui/x-data-grid/locales';
+import ModalWindow from './ModalWindow';
+import newModalContent from '../utils/newModalContent';
 
 alasql.utils.isBrowserify = false;
 alasql.utils.global.XLSX = XLSX;
@@ -13,7 +28,8 @@ alasql.utils.global.XLSX = XLSX;
 
 function SqlApp() {
 
-  const { mode, setMode } = useThemeContext();
+  const { mode, setMode, dataGridTableHeight, dataGridColumnWidth, rowWithColumnNames } = useThemeContext();
+  const { modalOpen } = useModalContext();
 
   const [data, setData] = useState({});
 
@@ -23,8 +39,15 @@ function SqlApp() {
   const [alasqlQueryAfter, setAlasqlQueryAfter] = useState('');
 
   const [inputFileValue, setInputFileValue] = useState('');
+  const [currentWorkbook, setCurrentWorkbook] = useState('');
   const [availableWorkSheets, setAvailableWorkSheets] = useState([]);
   const [currrentWorksheet, setCurrentWorksheet] = useState('');
+  const [currentWorksheetRange, setCurrentWorksheetRange] = useState('');
+  const [availableColumns, setAvailableColumns] = useState([]);
+  const [currentGroupByColumn, setCurrentGroupByColumn] = useState('');
+
+  const [useDataGrid, setUseDataGrid] = useState(true);  // true - use DataGrid (with filters), false - use Table (without filters)
+  const [useGroupBy, setUseGroupBy] = useState(false);
 
   //execute AlaSQL query
   useEffect(() => {
@@ -51,56 +74,152 @@ function SqlApp() {
 
   //change current worksheet
   useEffect(() => {
-    if (alasqlQuerySource) {
-      // Use a regular expression to find and replace the sheetid value
-      const updatedSource = alasqlQuerySource.replace(
-        /{sheetid: "(.*?)", autoExt: false}/,
-        `{sheetid: "${currrentWorksheet}", autoExt: false}`
+    if (inputFileValue && alasqlQuerySource) {
+
+      // Get the current worksheet range
+      let newCurrentWorksheetRange = currentWorkbook.Sheets[currrentWorksheet]["!ref"];
+
+      //Replace A1 with A + rowWithColumnNames
+      newCurrentWorksheetRange = newCurrentWorksheetRange.replace(/A(.*?):/, `A${rowWithColumnNames}:`);
+
+      // Use RegExp to find and replace the sheetid value
+      let updatedSource = alasqlQuerySource.replace(
+        /{sheetid: "(.*?)", autoExt: false/,
+        `{sheetid: "${currrentWorksheet}", autoExt: false`
       );
+
+      // Use RegExp to find and replace the range value
+      updatedSource = updatedSource.replace(
+        /range: "(.*?)"/,
+        `range: "${newCurrentWorksheetRange}"`
+      );
+
+      updateAvailableColumns(currentWorkbook, currrentWorksheet, newCurrentWorksheetRange);
       setAlasqlQuerySource(updatedSource);
+      setCurrentWorksheetRange(newCurrentWorksheetRange);
     }
-  }, [currrentWorksheet]);
+  }, [currrentWorksheet, rowWithColumnNames]);
 
-  const handleFileChange = (newInputValue) => {
-    const file = newInputValue;
-    const fileName = file.name;
-    const fileExtension = fileName.split('.').pop()?.toLowerCase();
 
-    if (fileExtension === 'csv' || fileExtension === 'xls' || fileExtension === 'xlsx') {
-      const reader = new FileReader();
-  
-      reader.onload = (e) => {
-        const data = e.target.result; // Binary string or array buffer
-        let workbook = XLSX.read(data, { type: 'binary' });
-
-        console.log(workbook.SheetNames);
-        setAvailableWorkSheets(() => workbook.SheetNames);
-        setCurrentWorksheet(() => workbook.SheetNames[workbook.SheetNames.length - 1]);  // default current worksheet - the last one
-  
-        // Store temporary path for AlaSQL
-        let tmppath = URL.createObjectURL(file);
-  
-        setInputFileValue(() => file);
-        setAlasqlQueryBefore('SELECT *');
-        setAlasqlQuerySource(`FROM ${fileExtension}("${tmppath}", {sheetid: "${currrentWorksheet}", autoExt: false})`);
-        setAlasqlQueryAfter('');
-      };
-  
-      reader.readAsBinaryString(file); // Read file as binary string
-    } else {
-      setInputFileValue('');
-      alert('Invalid file type! Please upload a CSV, XLS, or XLSX file.');
+  //Group by
+  useEffect(() => {
+    if (!inputFileValue) {
+      return;
     }
-  };
+    if (inputFileValue && useGroupBy && currentGroupByColumn) {
+      setAlasqlQueryBefore(`SELECT [${currentGroupByColumn}], COUNT(*)`);
+      setAlasqlQueryAfter(`WHERE [${currentGroupByColumn}] IS NOT NULL GROUP BY [${currentGroupByColumn}]`);
+    }
+    else {
+      setAlasqlQueryBefore('SELECT *');
+      setAlasqlQueryAfter('');
+    }
+}, [useGroupBy, currentGroupByColumn]);
+
+const handleFileChange = (newInputValue) => {
+  const file = newInputValue;
+  const fileName = file.name;
+  const fileExtension = fileName.split('.').pop()?.toLowerCase();
+
+  if (fileExtension === 'csv' || fileExtension === 'xls' || fileExtension === 'xlsx') {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      let data = e.target.result; // Binary string or array buffer
+      let workbook = XLSX.read(data, { type: 'binary' });
+      // console.log(workbook);
+      setCurrentWorkbook(() => workbook);
+
+      // console.log(workbook.SheetNames);
+      setAvailableWorkSheets(() => workbook.SheetNames);
+
+      // Set default worksheet as the last sheet
+      const defaultSheetName = workbook.SheetNames[workbook.SheetNames.length - 1];
+      setCurrentWorksheet(() => defaultSheetName);
+
+      // Get the default worksheet range e.g. A1:H100
+      let defaultWorksheetRange = workbook.Sheets[defaultSheetName]["!ref"];
+
+      //Replace A1 with A + rowWithColumnNames
+      defaultWorksheetRange = defaultWorksheetRange.replace('A1', `A${rowWithColumnNames}`);
+      setCurrentWorksheetRange(() => defaultWorksheetRange);
+
+      // console.log(defaultWorksheetRange)
+
+      // Call the new function to update columns based on the default sheet
+      updateAvailableColumns(workbook, defaultSheetName, defaultWorksheetRange);
+
+      // Store temporary path for AlaSQL
+      let tmppath = URL.createObjectURL(file);
+
+      // let currentRange = workbook.Sheets[defaultSheetName]["!ref"];
+
+      setInputFileValue(() => file);
+      setAlasqlQueryBefore('SELECT *');
+      setAlasqlQuerySource(`FROM ${fileExtension}("${tmppath}", {sheetid: "${defaultSheetName}", autoExt: false, range: "${defaultWorksheetRange}"})`);
+      setAlasqlQueryAfter('');
+    };
+
+    reader.readAsBinaryString(file); // Read file as binary string
+  } else {
+    setInputFileValue('');
+    alert('Invalid file type! Please upload a CSV, XLS, or XLSX file.');
+  }
+};
+
+const updateAvailableColumns = (workbook, sheetName, range) => {
+  const worksheet = workbook.Sheets[sheetName];
+  const sheetRange = XLSX.utils.decode_range(range);
+  // const sheetRange = XLSX.utils.decode_range(worksheet["!ref"]); // Get the range of the sheet
+
+  // console.log(worksheet["!ref"]);
+
+  // Extract column headers (first row values)
+  const columnHeaders = [];
+  for (let colIndex = sheetRange.s.c; colIndex <= sheetRange.e.c; colIndex++) {
+    const cellAddress = XLSX.utils.encode_cell({ r: rowWithColumnNames - 1, c: colIndex }); // Get the cell address in the first row
+    const cellValue = worksheet[cellAddress]?.v; // Retrieve the cell's value
+    if (cellValue) columnHeaders.push(cellValue);
+  }
+
+  // console.log(columnHeaders);
+  setAvailableColumns(columnHeaders); // Set the available columns
+  setCurrentGroupByColumn(columnHeaders[0]); // Default group by column - first column
+};
+
+
 
     return ( 
         <>
+      {/* Page Wrapper */}
+      <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'space-between', flexDirection: 'column', height: '100%', p:1.5, overflow: 'auto'}}>
 
-      <DarkModeSwitch checked={mode === 'dark'} onChange={() => setMode(mode === 'dark' ? 'light' : 'dark')} size={24} sunColor='currentColor' moonColor='currentColor'
-      style={{position: 'absolute', top: '17px', right: '17px'}}/>
+      <ModalWindow />
+
+      {/* Page Header */}
+      <Box sx={{height: '48px', position: 'relative', top: 0, mb: 1, display: 'flex', justifyContent: 'space-between'}}>
+        <Box>
+          <img
+            src={kulLogoBlack}
+            style={{position: 'absolute', top: '0px', left: '0px', width: 105, height: 32, cursor: 'pointer'}}
+            onClick={() => window.location.reload()}
+            />
+        </Box>
+        <Box sx={{width: 116}}>
+          <SettingsIcon sx={{cursor: 'pointer'}} onClick={() => modalOpen(newModalContent.options)} />
+          <DarkModeSwitch checked={mode === 'dark'} onChange={() => setMode(mode === 'dark' ? 'light' : 'dark')} size={24} sunColor='currentColor' moonColor='currentColor'
+          style={{position: 'absolute', top: '0px', right: '0px'}}/>
+        </Box>
+
+      {/* End Page Header */}
+      </Box>
+
+
+      {/* Page App */}
+      <Box>
 
       <MuiFileInput
-        label="Wybierz plik CSV/XLS/XLSX"
+        label={inputFileValue ? "Plik CSV/XLS/XLSX" : "Wybierz plik CSV/XLS/XLSX"}
         accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
         value={inputFileValue}
         onChange={handleFileChange}
@@ -110,6 +229,7 @@ function SqlApp() {
       />
 
       {availableWorkSheets.length > 0 && currrentWorksheet && (
+        <>
         <FormControl sx={{ mb: 2, ml: 1, minWidth: 150 }}>
           <InputLabel id="select-worksheet-label">Arkusz</InputLabel>
           <Select
@@ -126,6 +246,30 @@ function SqlApp() {
             ))}
           </Select>
         </FormControl>
+
+        <Typography><Checkbox checked={useDataGrid} onChange={(e) => setUseDataGrid(e.target.checked)} /> Filtrowanie zaawansowane</Typography>
+        <Typography><Checkbox checked={useGroupBy} onChange={(e) => setUseGroupBy(e.target.checked)} /> Grupowanie wyników</Typography>
+
+        {useGroupBy && (
+          <FormControl sx={{ my: 2, ml: 1, minWidth: 220 }}>
+          <InputLabel id="select-groupby-label">Grupuj według kolumny</InputLabel>
+          <Select
+            labelId="select-groupby-label"
+            id="select-groupby-column"
+            value={currentGroupByColumn}
+            label="Grupuj według kolumny"
+            onChange={(e) => setCurrentGroupByColumn(e.target.value)}
+          >
+            {availableColumns.map((column) => (
+              <MenuItem key={column} value={column}>
+                {column}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        )}
+
+        </>
       )}
 
       <TextField 
@@ -164,52 +308,104 @@ function SqlApp() {
         value={alasqlQueryAfter}
         onChange={(e) => setAlasqlQueryAfter(e.target.value)}
         sx={{
-          mb: 2,
+          mb: 3,
         }}
       />
 
-      {/* {alasqlQuery && 
+      {(inputFileValue && data.length > 0 && currrentWorksheet) && (
         <>
-            <Typography variant="h6">Final SQL Query: </Typography>
-            <Typography variant="h6" sx={{mb: 2}}>{alasqlQuery}</Typography>
+          <Typography variant="h6" sx={{ mb: 1 }}>{currrentWorksheet}</Typography>
         </>
-      } */}
+      )}
 
-      <table className="table table-striped">
-        <thead>
-          <tr>
-            {data.length > 0 ? (
-              Object.keys(data[0]).map((key, index) => (
-                <th key={index}>{key}</th>
-              ))
+      <TableContainer component={Paper} sx={{ maxHeight: dataGridTableHeight + 'px', overflow: 'auto' }}>
+        {data.length > 0 ? (
+          <>
+            {/* {console.log(data)} */}
+            {useDataGrid ? (
+              // Render DataGrid
+              <Paper sx={{ height: dataGridTableHeight + 'px', width: '100%' }}>
+                <DataGrid
+                  localeText={plPL.components.MuiDataGrid.defaultProps.localeText} 
+                  rows={data.map((row, index) => ({ id: index, ...row }))}
+                  columns={
+                    data.length > 0 && data[0]
+                      ? Object.keys(data[0]).map((key) => ({
+                          field: key,
+                          headerName: key,
+                          // flex: 1,
+                          minWidth: dataGridColumnWidth,
+                          valueFormatter: (params) => {
+                            return params instanceof Date ? params.toLocaleDateString() : String(params);
+                          },
+                        }))
+                      : [] // Fallback to an empty array if no data is available
+                  }
+                  sx={{
+                    border: 0,
+                    '& .MuiDataGrid-columnHeaderTitle': {
+                      fontWeight: 'bold', // Makes column headers bold
+                    },
+                  }}
+                  // pageSize can exceed 100 only in the Pro or Premium version
+                  // pageSize={data.length}
+                  // pageSizeOptions={[25, 50, 100, data.length]}
+                />
+              </Paper>
             ) : (
-              <th></th>
+              // Render Table
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    {Object.keys(data[0]).map((key) => (
+                      <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }} key={key}>
+                        {key}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {data.map((row, rowIndex) => (
+                    <TableRow key={rowIndex}>
+                      {Object.values(row).map((value, colIndex) => (
+                        <TableCell key={colIndex}>
+                          {value instanceof Date ? value.toLocaleDateString() : String(value)}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
-          </tr>
-        </thead>
-        <tbody>
-          {data.length > 0 ? (
-            data.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {Object.values(row).map((value, colIndex) => (
-                  <td key={colIndex}>
-                    {value instanceof Date
-                    ? value.toLocaleDateString()
-                    : String(value)}
-                    </td>
-                ))}
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="100%">Waiting for data...</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+          </>
+        ) : (
+          <Table>
+            <TableBody>
+              <TableRow>
+                <TableCell align="center" colSpan={1}>
+                  {inputFileValue ? 'Invalid SQL Query...' : 'Wybierz plik, aby wyświetlić dane'}
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        )}
+      </TableContainer>
+
+      {/* End Page App */}
+      </Box>
       
+      {/* Page Footer */}
+      <Box>
+      <Typography variant="div" sx={{ fontSize: 10, textAlign: 'center', my: 1 }}>
+        KUL (Katolicki Uniwersytet Lubelski) - Dział Współpracy Międzynarodowej &copy; 2024-2025 Bartłomiej Pawłowski - ExcelSQL v1.4.1
+      </Typography>
+      </Box>
+
+      {/* End Page Wrapper */}
+      </Box>
+
       </>
-     );
+     )
 }
 
 export default SqlApp;

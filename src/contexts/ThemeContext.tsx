@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useRef } from 'react';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useLocalStorageState } from '@toolpad/core';
@@ -9,6 +9,10 @@ interface ThemeContextType {
     mode: ModeType;
     setMode: (mode: ModeType) => void;
     toggleTheme: () => void;
+    dataGridTableHeight: number;
+    setDataGridTableHeight: (height: number) => void;
+    dataGridColumnWidth: number;
+    setDataGridColumnWidth: (width: number) => void;
   }
 
   const ThemeContext = createContext<ThemeContextType | null>(null);
@@ -16,6 +20,13 @@ interface ThemeContextType {
   const ThemeContextProvider = ({ children }: { children: React.ReactNode }) => {
     const prefersDarkMode = useMediaQuery<boolean>('(prefers-color-scheme: dark)');
     const [mode, setMode] = useLocalStorageState<ModeType>('selectedMode', prefersDarkMode ? 'dark' : 'light');
+
+    //Data Grid / Table - Height (manageable in Options, default 400px)
+    const [dataGridTableHeight, setDataGridTableHeight] = useLocalStorageState<number>('dataGridTableHeight', 400);
+    const [dataGridColumnWidth, setDataGridColumnWidth] = useLocalStorageState<number>('dataGridColumnWidth', 100);
+    const [rowWithColumnNames, setRowWithColumnNames] = useLocalStorageState<number>('rowWithColumnNames', 1);
+
+    const optionsLastActiveTextFieldId = useRef<string>("");
 
     const appTheme = createTheme({
         palette: {
@@ -34,6 +45,14 @@ interface ThemeContextType {
             },
         },
         components: {
+          MuiPaper: {
+            styleOverrides: {
+              root: {
+                backgroundColor: mode === 'dark' ? lighten('#121212', 0.23) : '#ffffff', // Background adapts to mode
+                borderRadius: '4px',
+              },
+            },
+          },
             MuiInputBase: {
             styleOverrides: {
                 input: {
@@ -93,6 +112,19 @@ interface ThemeContextType {
                 },
             },
             },
+            MuiDataGrid: {
+              styleOverrides: {
+                columnHeader: {
+                  backgroundColor: mode === 'dark' ? lighten('#121212', 0.14) : darken('#ffffff', 0.12),
+                },
+                cell: {
+                  backgroundColor: mode === 'dark' ? lighten('#121212', 0.04) : 'white',
+                },
+                footerContainer: {
+                  backgroundColor: mode === 'dark' ? lighten('#121212', 0.14) : darken('#ffffff', 0.12),
+                }
+              },
+            },
         },
     });
 
@@ -101,7 +133,7 @@ interface ThemeContextType {
           };
 
 return (
-    <ThemeContext.Provider value={{ mode, setMode, toggleTheme }}>
+    <ThemeContext.Provider value={{ mode, setMode, toggleTheme, dataGridTableHeight, setDataGridTableHeight, dataGridColumnWidth, setDataGridColumnWidth, rowWithColumnNames, setRowWithColumnNames, optionsLastActiveTextFieldId }}>
       <ThemeProvider theme={appTheme}>
         <CssBaseline />
         {children}

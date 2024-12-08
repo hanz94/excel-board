@@ -13,6 +13,7 @@
     "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.5",
     "@mui/material": "^6.1.8",
+    "@mui/x-data-grid": "^7.22.3",
     "@toolpad/core": "^0.10.0",
     "alasql": "^4.5.2",
     "mui-file-input": "^6.0.0",

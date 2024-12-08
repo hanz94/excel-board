@@ -1,11 +1,14 @@
 import { ThemeContextProvider } from './contexts/ThemeContext';
+import { ModalContextProvider } from './contexts/ModalContext';
 import SqlApp from './components/SqlApp';
 
 function App() {
 
   return (
     <ThemeContextProvider>
-      <SqlApp />
+      <ModalContextProvider>
+        <SqlApp />
+      </ModalContextProvider>
     </ThemeContextProvider>
   );
 }
