@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { DarkModeSwitch } from 'react-toggle-dark-mode';
 import '../App.css';
-import { FormControl, InputLabel, Select, MenuItem, TextField, Typography, Checkbox, Box } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem, TextField, Typography, Checkbox, Box, FormControlLabel } from '@mui/material';
 import * as alasql from 'alasql';
 import * as XLSX from 'xlsx';
 import { MuiFileInput } from 'mui-file-input';
@@ -28,10 +28,12 @@ alasql.utils.global.XLSX = XLSX;
 
 function SqlApp() {
 
-  const { mode, setMode, dataGridTableHeight, dataGridColumnWidth, rowWithColumnNames } = useThemeContext();
+  const { mode, setMode, dataGridTableHeight, dataGridColumnWidth, trimRows, rowWithColumnNames } = useThemeContext();
   const { modalOpen } = useModalContext();
 
-  const [data, setData] = useState({});
+  const [data, setData] = useState([]);
+  const [originalData, setOriginalData] = useState([]);
+  const [slicedData, setSlicedData] = useState([]);
 
   const [alasqlQuery, setAlasqlQuery] = useState('');
   const [alasqlQueryBefore, setAlasqlQueryBefore] = useState('');
@@ -49,21 +51,57 @@ function SqlApp() {
   const [useDataGrid, setUseDataGrid] = useState(true);  // true - use DataGrid (with filters), false - use Table (without filters)
   const [useGroupBy, setUseGroupBy] = useState(false);
 
+  //remove data after empty rows - fix for group by
+const alasqlRemoveDataAfterFirstEmptyRow = function (rows) {
+  // Find the index of the first empty row
+  const emptyRowIndex = rows.findIndex(row =>
+      Object.values(row).every(value => value === null || value === undefined || value === "")
+  );
+  // Return rows up to the first empty row
+  return emptyRowIndex === -1 ? rows : rows.slice(0, emptyRowIndex);
+};
+
   //execute AlaSQL query
   useEffect(() => {
-    if (alasqlQuery) {
-      alasql.promise(alasqlQuery)
+    if (inputFileValue && alasqlQuery && useGroupBy && trimRows === 'true') {
+        alasql.promise('SELECT * ' + alasqlQuerySource)
         .then((result) => {
-          setData(result);
+          let tmpData = result;
+          tmpData = alasqlRemoveDataAfterFirstEmptyRow(tmpData);
+          // console.log(tmpData);
+
+          alasql.promise(alasqlQueryBefore + ' FROM ? ' + alasqlQueryAfter, [tmpData])
+          .then((result) => {
+            setData(result);
+            setOriginalData(result);
+            setSlicedData(result);
+          })
+          .catch((error) => {
+            console.error('Error fetching data:', error);
+            setData([]);
+          });
         })
         .catch((error) => {
           console.error('Error fetching data:', error);
-          setData({});
+          setData([]);
         });
-    }
-  }, [alasqlQuery]);
+      }
+      else if (inputFileValue && alasqlQuery) {
+        alasql.promise(alasqlQuery)
+        .then((result) => {
+          setData(result);
+          setOriginalData(result);
+          let firstEmptyRowIndex = result.findIndex(obj => Object.keys(obj).length === 0);
+          setSlicedData(result.slice(0,firstEmptyRowIndex));
+        })
+        .catch((error) => {
+          console.error('Error fetching data:', error);
+          setData([]);
+        });
+      }
+  }, [alasqlQuery, useGroupBy, trimRows]);
 
-  //merge AlaSQL query @to be checked: potential trim issue
+  //merge AlaSQL query
   useEffect(() => {
     if (alasqlQueryBefore || alasqlQuerySource || alasqlQueryAfter) {
       setAlasqlQuery(alasqlQueryBefore + ' ' + alasqlQuerySource + ' ' + alasqlQueryAfter);
@@ -72,7 +110,7 @@ function SqlApp() {
     }
   }, [alasqlQueryBefore, alasqlQuerySource, alasqlQueryAfter]);
 
-  //change current worksheet
+  //Change current worksheet
   useEffect(() => {
     if (inputFileValue && alasqlQuerySource) {
 
@@ -115,6 +153,19 @@ function SqlApp() {
       setAlasqlQueryAfter('');
     }
 }, [useGroupBy, currentGroupByColumn]);
+
+//Trim the first empty row and all rows below
+useEffect(() => {
+
+  if (inputFileValue && trimRows === 'true') {
+    setData(slicedData);
+  }
+  else if (inputFileValue && trimRows !== 'true') {
+    setData(originalData);
+  }
+
+}, [originalData, slicedData, trimRows]);
+
 
 const handleFileChange = (newInputValue) => {
   const file = newInputValue;
@@ -192,7 +243,7 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
     return ( 
         <>
       {/* Page Wrapper */}
-      <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'space-between', flexDirection: 'column', height: '100%', p:1.5, overflow: 'auto'}}>
+      <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'space-between', flexDirection: 'column', height: '100%', p:2.5, overflow: 'auto'}}>
 
       <ModalWindow />
 
@@ -247,8 +298,12 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
           </Select>
         </FormControl>
 
-        <Typography><Checkbox checked={useDataGrid} onChange={(e) => setUseDataGrid(e.target.checked)} /> Filtrowanie zaawansowane</Typography>
-        <Typography><Checkbox checked={useGroupBy} onChange={(e) => setUseGroupBy(e.target.checked)} /> Grupowanie wyników</Typography>
+        <Typography>
+          <FormControlLabel control={<Checkbox checked={useDataGrid} onChange={(e) => setUseDataGrid(e.target.checked)} />} label="Filtrowanie zaawansowane" />
+        </Typography>
+        <Typography>
+          <FormControlLabel control={<Checkbox checked={useGroupBy} onChange={(e) => setUseGroupBy(e.target.checked)} />} label="Grupowanie wyników" />
+        </Typography>
 
         {useGroupBy && (
           <FormControl sx={{ my: 2, ml: 1, minWidth: 220 }}>
@@ -319,9 +374,11 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
       )}
 
       <TableContainer component={Paper} sx={{ maxHeight: dataGridTableHeight + 'px', overflow: 'auto' }}>
+
         {data.length > 0 ? (
           <>
             {/* {console.log(data)} */}
+
             {useDataGrid ? (
               // Render DataGrid
               <Paper sx={{ height: dataGridTableHeight + 'px', width: '100%' }}>
@@ -336,6 +393,9 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
                           // flex: 1,
                           minWidth: dataGridColumnWidth,
                           valueFormatter: (params) => {
+                            if (typeof params === 'undefined') {
+                              return '(Puste)';
+                            }
                             return params instanceof Date ? params.toLocaleDateString() : String(params);
                           },
                         }))
@@ -397,7 +457,7 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
       {/* Page Footer */}
       <Box>
       <Typography variant="div" sx={{ fontSize: 10, textAlign: 'center', my: 1 }}>
-        KUL (Katolicki Uniwersytet Lubelski) - Dział Współpracy Międzynarodowej &copy; 2024-2025 Bartłomiej Pawłowski - ExcelSQL v1.4.1
+        KUL (Katolicki Uniwersytet Lubelski) - Dział Współpracy Międzynarodowej &copy; 2024-2025 Bartłomiej Pawłowski - ExcelSQL v1.4.3
       </Typography>
       </Box>
 

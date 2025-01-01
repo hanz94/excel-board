@@ -24,6 +24,7 @@ function RowWithColumnNames() {
       sx={{ width: "100%" }}
       label="Wiersz z nazwami kolumn"
       value={rowWithColumnNames}
+      inputProps={{ min: 1 }}
       onFocus={() => {
         optionsLastActiveTextFieldId.current = "row-with-column-names";
       }}

@@ -25,6 +25,8 @@ interface ThemeContextType {
     const [dataGridTableHeight, setDataGridTableHeight] = useLocalStorageState<number>('dataGridTableHeight', 400);
     const [dataGridColumnWidth, setDataGridColumnWidth] = useLocalStorageState<number>('dataGridColumnWidth', 100);
     const [rowWithColumnNames, setRowWithColumnNames] = useLocalStorageState<number>('rowWithColumnNames', 1);
+    //the boolean value below (trimRows) is always converted to string because of the localStorage
+    const [trimRows, setTrimRows] = useLocalStorageState<boolean>('trimRows', true);
 
     const optionsLastActiveTextFieldId = useRef<string>("");
 
@@ -133,7 +135,7 @@ interface ThemeContextType {
           };
 
 return (
-    <ThemeContext.Provider value={{ mode, setMode, toggleTheme, dataGridTableHeight, setDataGridTableHeight, dataGridColumnWidth, setDataGridColumnWidth, rowWithColumnNames, setRowWithColumnNames, optionsLastActiveTextFieldId }}>
+    <ThemeContext.Provider value={{ mode, setMode, toggleTheme, dataGridTableHeight, setDataGridTableHeight, dataGridColumnWidth, setDataGridColumnWidth, rowWithColumnNames, setRowWithColumnNames, trimRows, setTrimRows, optionsLastActiveTextFieldId }}>
       <ThemeProvider theme={appTheme}>
         <CssBaseline />
         {children}
