@@ -22,6 +22,7 @@ import { plPL } from '@mui/x-data-grid/locales';
 import ModalWindow from './ModalWindow';
 import newModalContent from '../utils/newModalContent';
 
+
 alasql.utils.isBrowserify = false;
 alasql.utils.global.XLSX = XLSX;
 
@@ -44,11 +45,11 @@ function SqlApp() {
   const [currentWorkbook, setCurrentWorkbook] = useState('');
   const [availableWorkSheets, setAvailableWorkSheets] = useState([]);
   const [currrentWorksheet, setCurrentWorksheet] = useState('');
-  const [currentWorksheetRange, setCurrentWorksheetRange] = useState('');
+  // const [currentWorksheetRange, setCurrentWorksheetRange] = useState('');
   const [availableColumns, setAvailableColumns] = useState([]);
   const [currentGroupByColumn, setCurrentGroupByColumn] = useState('');
 
-  const [useDataGrid, setUseDataGrid] = useState(true);  // true - use DataGrid (with filters), false - use Table (without filters)
+  const [useDataGrid, setUseDataGrid] = useState(true);  // true - render DataGrid (with filters), false - render Table (without filters)
   const [useGroupBy, setUseGroupBy] = useState(false);
 
   //remove data after empty rows - fix for group by
@@ -68,7 +69,6 @@ const alasqlRemoveDataAfterFirstEmptyRow = function (rows) {
         .then((result) => {
           let tmpData = result;
           tmpData = alasqlRemoveDataAfterFirstEmptyRow(tmpData);
-          // console.log(tmpData);
 
           alasql.promise(alasqlQueryBefore + ' FROM ? ' + alasqlQueryAfter, [tmpData])
           .then((result) => {
@@ -134,7 +134,7 @@ const alasqlRemoveDataAfterFirstEmptyRow = function (rows) {
 
       updateAvailableColumns(currentWorkbook, currrentWorksheet, newCurrentWorksheetRange);
       setAlasqlQuerySource(updatedSource);
-      setCurrentWorksheetRange(newCurrentWorksheetRange);
+      // setCurrentWorksheetRange(newCurrentWorksheetRange);
     }
   }, [currrentWorksheet, rowWithColumnNames]);
 
@@ -193,7 +193,7 @@ const handleFileChange = (newInputValue) => {
 
       //Replace A1 with A + rowWithColumnNames
       defaultWorksheetRange = defaultWorksheetRange.replace('A1', `A${rowWithColumnNames}`);
-      setCurrentWorksheetRange(() => defaultWorksheetRange);
+      // setCurrentWorksheetRange(() => defaultWorksheetRange);
 
       // console.log(defaultWorksheetRange)
 
@@ -221,9 +221,7 @@ const handleFileChange = (newInputValue) => {
 const updateAvailableColumns = (workbook, sheetName, range) => {
   const worksheet = workbook.Sheets[sheetName];
   const sheetRange = XLSX.utils.decode_range(range);
-  // const sheetRange = XLSX.utils.decode_range(worksheet["!ref"]); // Get the range of the sheet
-
-  // console.log(worksheet["!ref"]);
+  // const sheetRange = XLSX.utils.decode_range(worksheet["!ref"]);
 
   // Extract column headers (first row values)
   const columnHeaders = [];
@@ -233,7 +231,6 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
     if (cellValue) columnHeaders.push(cellValue);
   }
 
-  // console.log(columnHeaders);
   setAvailableColumns(columnHeaders); // Set the available columns
   setCurrentGroupByColumn(columnHeaders[0]); // Default group by column - first column
 };
@@ -328,7 +325,6 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
       )}
 
       <TextField 
-        // disabled={!inputFileValue}
         fullWidth
         autoComplete='off'
         id="outlined-basic"
@@ -354,7 +350,6 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
       />
 
       <TextField 
-        // disabled={!inputFileValue}
         fullWidth
         autoComplete='off'
         id="outlined-basic"

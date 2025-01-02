@@ -13,6 +13,11 @@ interface ThemeContextType {
     setDataGridTableHeight: (height: number) => void;
     dataGridColumnWidth: number;
     setDataGridColumnWidth: (width: number) => void;
+    rowWithColumnNames: number;
+    setRowWithColumnNames: (rows: number) => void;
+    trimRows: boolean;
+    setTrimRows: (trim: boolean) => void;
+    optionsLastActiveTextFieldId: React.MutableRefObject<string>;
   }
 
   const ThemeContext = createContext<ThemeContextType | null>(null);
@@ -23,8 +28,13 @@ interface ThemeContextType {
 
     //Data Grid / Table - Height (manageable in Options, default 400px)
     const [dataGridTableHeight, setDataGridTableHeight] = useLocalStorageState<number>('dataGridTableHeight', 400);
+
+    //Data Grid - Column Width (manageable in Options, default 100px, minimum 100px)
     const [dataGridColumnWidth, setDataGridColumnWidth] = useLocalStorageState<number>('dataGridColumnWidth', 100);
+
+    //Data Grid / Table - Row with Column Names (column offset) (manageable in Options, default 1)
     const [rowWithColumnNames, setRowWithColumnNames] = useLocalStorageState<number>('rowWithColumnNames', 1);
+    
     //the boolean value below (trimRows) is always converted to string because of the localStorage
     const [trimRows, setTrimRows] = useLocalStorageState<boolean>('trimRows', true);
 

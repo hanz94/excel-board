@@ -1,50 +1,39 @@
-# React + TypeScript + Vite
+## [ENG] ExcelSQL App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ExcelSQL (React-based application) enables executing SQL commands on CSV, XLS, and XLSX files. This tool provides powerful data filtering and statistical analysis capabilities, all based on information stored in spreadsheets. 
 
-Currently, two official plugins are available:
+With ExcelSQL, you can:
+- Filter and sort data to create customized reports.
+- Perform expense analyses and generate detailed summaries.
+- Create individual codes based on data from multiple cells.
+- Manipulate and analyze date fields.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The system operates by converting a local spreadsheet in CSV, XLS, or XLSX format into a temporary database. You can then run SQL queries on this database using the [AlaSQL](https://github.com/alasql/alasql) library.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## [PL] Aplikacja ExcelSQL
 
-- Configure the top-level `parserOptions` property like this:
+Aplikacja reactowa **ExcelSQL** umożliwia wykonywanie poleceń SQL na plikach CSV, XLS oraz XLSX. Pozwala na filtrowanie danych i generowanie analiz statystycznych w oparciu o informacje zawarte w arkuszach kalkulacyjnych. 
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+Funkcje aplikacji:
+- Filtrowanie i sortowanie danych w celu tworzenia raportów.
+- Analizę wydatków i generowanie szczegółowych podsumowań.
+- Tworzenie indywidualnych kodów bazujących na danych z wielu komórek.
+- Operowanie na polach z datami.
+
+System opiera się na konwersji lokalnego arkusza kalkulacyjnego w formacie CSV, XLS lub XLSX do tymczasowej bazy danych, umożliwiając wykonywanie zapytań SQL za pomocą biblioteki [AlaSQL](https://github.com/alasql/alasql).
+
+## Installation
+Clone this repository and install dependencies:
+```bash
+git clone https://github.com/hanz94/excelsql.git
+cd excelsql
+npm install
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+## Contribution
+Feel free to open issues or submit pull requests to improve the project. We welcome contributions in both Polish and English.
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+## License
+This project is licensed under the MIT License.
