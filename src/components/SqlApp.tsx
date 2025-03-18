@@ -29,12 +29,15 @@ alasql.utils.global.XLSX = XLSX;
 
 function SqlApp() {
 
-  const { mode, setMode, dataGridTableHeight, dataGridColumnWidth, trimRows, rowWithColumnNames } = useThemeContext();
+  const { mode, setMode, dataGridTableHeight, dataGridColumnWidth, trimRows, rowWithColumnNames, optionsNameColumn, optionsSurnameColumn, optionsStartDateColumn, optionsEndDateColumn } = useThemeContext();
   const { modalOpen } = useModalContext();
 
   const [data, setData] = useState([]);
   const [originalData, setOriginalData] = useState([]);
   const [slicedData, setSlicedData] = useState([]);
+
+  //set app mode - 'arrivals' (przyjazdy) or 'departures' (wyjazdy)
+  const [appMode, setAppMode] = useState('arrivals');
 
   const [alasqlQuery, setAlasqlQuery] = useState('');
   const [alasqlQueryBefore, setAlasqlQueryBefore] = useState('');
@@ -49,6 +52,17 @@ function SqlApp() {
   const [availableColumns, setAvailableColumns] = useState([]);
 
   const [useDataGrid, setUseDataGrid] = useState(false);  // true - render DataGrid (with filters), false - render Table (without filters)
+
+  // set AlaSQL query based on appMode: arrivals (przyjazdy) or departures (wyjazdy)
+  useEffect(() => {
+    if (appMode === 'arrivals') {
+      setAlasqlQueryBefore(`SELECT [${optionsNameColumn}], [${optionsSurnameColumn}], "Powrót za " + DATEDIFF(day, NOW(), [${optionsEndDateColumn}]) + " dni" as POWROT`);
+      setAlasqlQueryAfter(`WHERE [${optionsEndDateColumn}] IS NOT NULL ORDER BY [${optionsEndDateColumn}]`);
+    } else if (appMode === 'departures') {
+      setAlasqlQueryBefore(`SELECT [${optionsNameColumn}], [${optionsSurnameColumn}], "Wyjazd za " + DATEDIFF(day, NOW(), [${optionsStartDateColumn}]) + " dni" as WYJAZD`);
+      setAlasqlQueryAfter(`WHERE [${optionsStartDateColumn}] IS NOT NULL ORDER BY [${optionsStartDateColumn}]`);
+    }
+  }, [appMode, optionsNameColumn, optionsSurnameColumn, optionsStartDateColumn, optionsEndDateColumn]);
 
   //remove data after empty rows - fix for group by
 const alasqlRemoveDataAfterFirstEmptyRow = function (rows) {
@@ -106,6 +120,7 @@ const alasqlRemoveDataAfterFirstEmptyRow = function (rows) {
     } else {
       setAlasqlQuery(''); // Reset alasqlQuery when all inputs are empty
     }
+    console.log('alasqlQuery: ', alasqlQuery);
   }, [alasqlQueryBefore, alasqlQuerySource, alasqlQueryAfter]);
 
   //Change current worksheet
@@ -188,9 +203,9 @@ const handleFileChange = (newInputValue) => {
       // let currentRange = workbook.Sheets[defaultSheetName]["!ref"];
 
       setInputFileValue(() => file);
-      setAlasqlQueryBefore('SELECT *');
+      // setAlasqlQueryBefore('SELECT *');
       setAlasqlQuerySource(`FROM ${fileExtension}("${tmppath}", {sheetid: "${defaultSheetName}", autoExt: false, range: "${defaultWorksheetRange}"})`);
-      setAlasqlQueryAfter('');
+      // setAlasqlQueryAfter('');
     };
 
     reader.readAsBinaryString(file); // Read file as binary string
@@ -283,7 +298,9 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
         </>
       )}
 
-      <TextField 
+      {/* old code - set alasqlQuery from text input */}
+
+      {/* <TextField 
         fullWidth
         autoComplete='off'
         id="outlined-basic"
@@ -319,7 +336,7 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
         sx={{
           mb: 3,
         }}
-      />
+      /> */}
 
       {(inputFileValue && data.length > 0 && currrentWorksheet) && (
         <>

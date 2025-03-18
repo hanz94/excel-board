@@ -18,6 +18,14 @@ interface ThemeContextType {
     trimRows: boolean;
     setTrimRows: (trim: boolean) => void;
     optionsLastActiveTextFieldId: React.MutableRefObject<string>;
+    optionsNameColumn: string;
+    setOptionsNameColumn: (name: string) => void;
+    optionsSurnameColumn: string;
+    setOptionsSurnameColumn: (name: string) => void;
+    optionsStartDateColumn: string;
+    setOptionsStartDateColumn: (name: string) => void;
+    optionsEndDateColumn: string;
+    setOptionsEndDateColumn: (name: string) => void;
   }
 
   const ThemeContext = createContext<ThemeContextType | null>(null);
@@ -37,6 +45,12 @@ interface ThemeContextType {
     
     //the boolean value below (trimRows) is always converted to string because of the localStorage
     const [trimRows, setTrimRows] = useLocalStorageState<boolean>('trimRows', true);
+
+    //column names options
+    const [optionsNameColumn, setOptionsNameColumn] = useLocalStorageState<string>('excelboard:optionsNameColumn', 'First Name');
+    const [optionsSurnameColumn, setOptionsSurnameColumn] = useLocalStorageState<string>('excelboard:optionsSurnameColumn', 'Last Name');
+    const [optionsStartDateColumn, setOptionsStartDateColumn] = useLocalStorageState<string>('excelboard:optionsStartDateColumn', 'Datehere');
+    const [optionsEndDateColumn, setOptionsEndDateColumn] = useLocalStorageState<string>('excelboard:optionsEndDateColumn', 'Datehere2');
 
     const optionsLastActiveTextFieldId = useRef<string>("");
 
@@ -145,7 +159,7 @@ interface ThemeContextType {
           };
 
 return (
-    <ThemeContext.Provider value={{ mode, setMode, toggleTheme, dataGridTableHeight, setDataGridTableHeight, dataGridColumnWidth, setDataGridColumnWidth, rowWithColumnNames, setRowWithColumnNames, trimRows, setTrimRows, optionsLastActiveTextFieldId }}>
+    <ThemeContext.Provider value={{ mode, setMode, toggleTheme, dataGridTableHeight, setDataGridTableHeight, dataGridColumnWidth, setDataGridColumnWidth, rowWithColumnNames, setRowWithColumnNames, trimRows, setTrimRows, optionsStartDateColumn, setOptionsStartDateColumn, optionsEndDateColumn, setOptionsEndDateColumn, optionsNameColumn, setOptionsNameColumn, optionsSurnameColumn, setOptionsSurnameColumn, optionsLastActiveTextFieldId }}>
       <ThemeProvider theme={appTheme}>
         <CssBaseline />
         {children}
