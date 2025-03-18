@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { DarkModeSwitch } from 'react-toggle-dark-mode';
 import '../App.css';
-import { FormControl, InputLabel, Select, MenuItem, TextField, Typography, Checkbox, Box, FormControlLabel } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem, Typography, Checkbox, Box, FormControlLabel, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import * as alasql from 'alasql';
 import * as XLSX from 'xlsx';
 import { MuiFileInput } from 'mui-file-input';
 import { useThemeContext } from '../contexts/ThemeContext';
 import { useModalContext } from '../contexts/ModalContext';
 import kulLogoBlack from '../assets/kul_logo-black.jpg';
-
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -163,6 +162,11 @@ useEffect(() => {
 
 }, [originalData, slicedData, trimRows]);
 
+const handleAppModeChange = (event, newAppMode) => {
+  if (newAppMode !== null) {
+    setAppMode(newAppMode);
+  }
+};
 
 const handleFileChange = (newInputValue) => {
   const file = newInputValue;
@@ -294,6 +298,20 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
         <Typography>
           <FormControlLabel control={<Checkbox checked={useDataGrid} onChange={(e) => setUseDataGrid(e.target.checked)} />} label="Filtrowanie zaawansowane" />
         </Typography>
+
+        <ToggleButtonGroup
+          color="primary"
+          value={appMode}
+          exclusive
+          onChange={handleAppModeChange}
+          sx={{
+            mt: 0.5,
+            mb: 1
+          }}
+        >
+          <ToggleButton value="departures">Wyjazdy</ToggleButton>
+          <ToggleButton value="arrivals">Przyjazdy</ToggleButton>
+        </ToggleButtonGroup>
 
         </>
       )}
