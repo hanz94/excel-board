@@ -47,10 +47,8 @@ function SqlApp() {
   const [currrentWorksheet, setCurrentWorksheet] = useState('');
   // const [currentWorksheetRange, setCurrentWorksheetRange] = useState('');
   const [availableColumns, setAvailableColumns] = useState([]);
-  const [currentGroupByColumn, setCurrentGroupByColumn] = useState('');
 
-  const [useDataGrid, setUseDataGrid] = useState(true);  // true - render DataGrid (with filters), false - render Table (without filters)
-  const [useGroupBy, setUseGroupBy] = useState(false);
+  const [useDataGrid, setUseDataGrid] = useState(false);  // true - render DataGrid (with filters), false - render Table (without filters)
 
   //remove data after empty rows - fix for group by
 const alasqlRemoveDataAfterFirstEmptyRow = function (rows) {
@@ -64,7 +62,7 @@ const alasqlRemoveDataAfterFirstEmptyRow = function (rows) {
 
   //execute AlaSQL query
   useEffect(() => {
-    if (inputFileValue && alasqlQuery && useGroupBy && trimRows === 'true') {
+    if (inputFileValue && alasqlQuery && trimRows === 'true') {
         alasql.promise('SELECT * ' + alasqlQuerySource)
         .then((result) => {
           let tmpData = result;
@@ -99,7 +97,7 @@ const alasqlRemoveDataAfterFirstEmptyRow = function (rows) {
           setData([]);
         });
       }
-  }, [alasqlQuery, useGroupBy, trimRows]);
+  }, [alasqlQuery, trimRows]);
 
   //merge AlaSQL query
   useEffect(() => {
@@ -137,22 +135,6 @@ const alasqlRemoveDataAfterFirstEmptyRow = function (rows) {
       // setCurrentWorksheetRange(newCurrentWorksheetRange);
     }
   }, [currrentWorksheet, rowWithColumnNames]);
-
-
-  //Group by
-  useEffect(() => {
-    if (!inputFileValue) {
-      return;
-    }
-    if (inputFileValue && useGroupBy && currentGroupByColumn) {
-      setAlasqlQueryBefore(`SELECT [${currentGroupByColumn}], COUNT(*)`);
-      setAlasqlQueryAfter(`WHERE [${currentGroupByColumn}] IS NOT NULL GROUP BY [${currentGroupByColumn}]`);
-    }
-    else {
-      setAlasqlQueryBefore('SELECT *');
-      setAlasqlQueryAfter('');
-    }
-}, [useGroupBy, currentGroupByColumn]);
 
 //Trim the first empty row and all rows below
 useEffect(() => {
@@ -232,7 +214,6 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
   }
 
   setAvailableColumns(columnHeaders); // Set the available columns
-  setCurrentGroupByColumn(columnHeaders[0]); // Default group by column - first column
 };
 
 
@@ -298,28 +279,6 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
         <Typography>
           <FormControlLabel control={<Checkbox checked={useDataGrid} onChange={(e) => setUseDataGrid(e.target.checked)} />} label="Filtrowanie zaawansowane" />
         </Typography>
-        <Typography>
-          <FormControlLabel control={<Checkbox checked={useGroupBy} onChange={(e) => setUseGroupBy(e.target.checked)} />} label="Grupowanie wyników" />
-        </Typography>
-
-        {useGroupBy && (
-          <FormControl sx={{ my: 2, ml: 1, minWidth: 220 }}>
-          <InputLabel id="select-groupby-label">Grupuj według kolumny</InputLabel>
-          <Select
-            labelId="select-groupby-label"
-            id="select-groupby-column"
-            value={currentGroupByColumn}
-            label="Grupuj według kolumny"
-            onChange={(e) => setCurrentGroupByColumn(e.target.value)}
-          >
-            {availableColumns.map((column) => (
-              <MenuItem key={column} value={column}>
-                {column}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        )}
 
         </>
       )}
@@ -452,7 +411,7 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
       {/* Page Footer */}
       <Box>
       <Typography variant="div" sx={{ fontSize: 10, textAlign: 'center', my: 1 }}>
-        KUL (Katolicki Uniwersytet Lubelski) - Dział Współpracy Międzynarodowej &copy; 2024-2025 Bartłomiej Pawłowski - ExcelSQL v1.4.3
+        KUL (Katolicki Uniwersytet Lubelski) - Dział Współpracy Międzynarodowej &copy; 2024-2025 Bartłomiej Pawłowski - Excel Board 1.1
       </Typography>
       </Box>
 
