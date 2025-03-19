@@ -25,6 +25,18 @@ import newModalContent from '../utils/newModalContent';
 alasql.utils.isBrowserify = false;
 alasql.utils.global.XLSX = XLSX;
 
+// custom alasql function REALDATEDIFF (real number of days between two dates ignoring time)
+alasql.fn.REALDATEDIFF = function(date1, date2) {
+  var d1 = new Date(date1);
+  var d2 = new Date(date2);
+
+  // Normalize dates to ignore time (set time to midnight)
+  d1.setHours(0, 0, 0, 0);
+  d2.setHours(0, 0, 0, 0);
+
+  // Calculate the difference in days
+  return Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
+};
 
 function SqlApp() {
 
@@ -55,10 +67,28 @@ function SqlApp() {
   // set AlaSQL query based on appMode: arrivals (przyjazdy) or departures (wyjazdy)
   useEffect(() => {
     if (appMode === 'arrivals') {
-      setAlasqlQueryBefore(`SELECT [${optionsNameColumn}], [${optionsSurnameColumn}], "Powrót za " + DATEDIFF(day, NOW(), [${optionsEndDateColumn}]) + " dni" as POWROT`);
+      // setAlasqlQueryBefore(`SELECT [${optionsNameColumn}], [${optionsSurnameColumn}], "Powrót za " + DATEDIFF(day, NOW(), [${optionsEndDateColumn}]) + " dni" as POWROT`);
+
+      setAlasqlQueryBefore(`SELECT [${optionsNameColumn}], [${optionsSurnameColumn}], 
+        CASE 
+        WHEN REALDATEDIFF(NOW(), [${optionsEndDateColumn}]) <= -2 THEN "Wrócił(a) <b>" + ABS(REALDATEDIFF(NOW(), [${optionsEndDateColumn}])) + " dni temu</b>"
+        WHEN REALDATEDIFF(NOW(), [${optionsEndDateColumn}]) = -1 THEN "Wrócił(a) <b>wczoraj</b>"
+        WHEN REALDATEDIFF(NOW(), [${optionsEndDateColumn}]) = 0 THEN "Przyjazd <b>dzisiaj</b>"
+        WHEN REALDATEDIFF(NOW(), [${optionsEndDateColumn}]) = 1 THEN "Przyjazd <b>jutro</b>"
+        WHEN REALDATEDIFF(NOW(), [${optionsEndDateColumn}]) >= 1 THEN "Przyjazd za <b>" + REALDATEDIFF(NOW(), [${optionsEndDateColumn}]) + " dni</b>"
+        END as POWROT`);
       setAlasqlQueryAfter(`WHERE [${optionsEndDateColumn}] IS NOT NULL ORDER BY [${optionsEndDateColumn}]`);
     } else if (appMode === 'departures') {
-      setAlasqlQueryBefore(`SELECT [${optionsNameColumn}], [${optionsSurnameColumn}], "Wyjazd za " + DATEDIFF(day, NOW(), [${optionsStartDateColumn}]) + " dni" as WYJAZD`);
+      // setAlasqlQueryBefore(`SELECT [${optionsNameColumn}], [${optionsSurnameColumn}], "Wyjazd za " + DATEDIFF(day, NOW(), [${optionsStartDateColumn}]) + " dni" as WYJAZD`);
+
+      setAlasqlQueryBefore(`SELECT [${optionsNameColumn}], [${optionsSurnameColumn}], 
+        CASE 
+        WHEN REALDATEDIFF(NOW(), [${optionsStartDateColumn}]) <= -2 THEN "Wyjechał(a) <b>" + ABS(REALDATEDIFF(NOW(), [${optionsStartDateColumn}])) + " dni temu</b>"
+        WHEN REALDATEDIFF(NOW(), [${optionsStartDateColumn}]) = -1 THEN "Wyjechał(a) <b>wczoraj</b>"
+        WHEN REALDATEDIFF(NOW(), [${optionsStartDateColumn}]) = 0 THEN "Wyjeżdża <b>dzisiaj</b>"
+        WHEN REALDATEDIFF(NOW(), [${optionsStartDateColumn}]) = 1 THEN "Wyjeżdża <b>jutro</b>"
+        WHEN REALDATEDIFF(NOW(), [${optionsStartDateColumn}]) >= 1 THEN "Wyjeżdża za <b>" + REALDATEDIFF(NOW(), [${optionsStartDateColumn}]) + " dni</b>"
+        END as WYJAZD`);
       setAlasqlQueryAfter(`WHERE [${optionsStartDateColumn}] IS NOT NULL ORDER BY [${optionsStartDateColumn}]`);
     }
   }, [appMode, optionsNameColumn, optionsSurnameColumn, optionsStartDateColumn, optionsEndDateColumn]);
@@ -266,6 +296,19 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
       {/* Page App */}
       <Box>
 
+
+        <Typography variant="h5" sx={{ mb: (!inputFileValue && !currentWorkbook && !availableWorkSheets.length > 0 && !currrentWorksheet && !availableColumns.length > 0) ? 1 : 4 }}>
+          Excel Board
+        </Typography>
+
+        {!inputFileValue && !currentWorkbook && !availableWorkSheets.length > 0 && !currrentWorksheet && !availableColumns.length > 0 && (
+          <Typography variant="h6" sx={{mb: 6}}>
+            Tablica wyjazdów i przyjazdów
+          </Typography>
+        )}
+
+
+
       <MuiFileInput
         label={inputFileValue ? "Plik CSV/XLS/XLSX" : "Wybierz plik CSV/XLS/XLSX"}
         accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
@@ -418,7 +461,7 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
                     <TableRow key={rowIndex}>
                       {Object.values(row).map((value, colIndex) => (
                         <TableCell key={colIndex}>
-                          {value instanceof Date ? value.toLocaleDateString() : String(value)}
+                          {value instanceof Date ? value.toLocaleDateString() : <div dangerouslySetInnerHTML={{ __html: String(value) }} />}
                         </TableCell>
                       ))}
                     </TableRow>

@@ -47,10 +47,10 @@ interface ThemeContextType {
     const [trimRows, setTrimRows] = useLocalStorageState<boolean>('trimRows', true);
 
     //column names options
-    const [optionsNameColumn, setOptionsNameColumn] = useLocalStorageState<string>('excelboard:optionsNameColumn', 'First Name');
-    const [optionsSurnameColumn, setOptionsSurnameColumn] = useLocalStorageState<string>('excelboard:optionsSurnameColumn', 'Last Name');
-    const [optionsStartDateColumn, setOptionsStartDateColumn] = useLocalStorageState<string>('excelboard:optionsStartDateColumn', 'Datehere');
-    const [optionsEndDateColumn, setOptionsEndDateColumn] = useLocalStorageState<string>('excelboard:optionsEndDateColumn', 'Datehere2');
+    const [optionsNameColumn, setOptionsNameColumn] = useLocalStorageState<string>('excelboard:optionsNameColumn', 'Imię');
+    const [optionsSurnameColumn, setOptionsSurnameColumn] = useLocalStorageState<string>('excelboard:optionsSurnameColumn', 'Nazwisko');
+    const [optionsStartDateColumn, setOptionsStartDateColumn] = useLocalStorageState<string>('excelboard:optionsStartDateColumn', 'Start date');
+    const [optionsEndDateColumn, setOptionsEndDateColumn] = useLocalStorageState<string>('excelboard:optionsEndDateColumn', 'End date');
 
     const optionsLastActiveTextFieldId = useRef<string>("");
 
