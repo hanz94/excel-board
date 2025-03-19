@@ -475,7 +475,7 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
             <TableBody>
               <TableRow>
                 <TableCell align="center" colSpan={1}>
-                  {inputFileValue ? 'Invalid SQL Query...' : 'Wybierz plik, aby wyświetlić dane'}
+                  {inputFileValue ? 'W bieżącym arkuszu nie znaleziono podanych nazw kolumn. Sprawdź ustawienia.' : 'Wybierz plik, aby wyświetlić dane'}
                 </TableCell>
               </TableRow>
             </TableBody>
