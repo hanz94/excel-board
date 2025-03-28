@@ -26,6 +26,8 @@ interface ThemeContextType {
     setOptionsStartDateColumn: (name: string) => void;
     optionsEndDateColumn: string;
     setOptionsEndDateColumn: (name: string) => void;
+    lastWorksheetStorage: string;
+    setLastWorksheetStorage: (name: string) => void;
   }
 
   const ThemeContext = createContext<ThemeContextType | null>(null);
@@ -51,6 +53,8 @@ interface ThemeContextType {
     const [optionsSurnameColumn, setOptionsSurnameColumn] = useLocalStorageState<string>('excelboard:optionsSurnameColumn', 'Nazwisko');
     const [optionsStartDateColumn, setOptionsStartDateColumn] = useLocalStorageState<string>('excelboard:optionsStartDateColumn', 'Start date');
     const [optionsEndDateColumn, setOptionsEndDateColumn] = useLocalStorageState<string>('excelboard:optionsEndDateColumn', 'End date');
+
+    const [lastWorksheetStorage, setLastWorksheetStorage] = useLocalStorageState<string>('excelboard:lastWorksheet', '');
 
     const optionsLastActiveTextFieldId = useRef<string>("");
 
@@ -159,7 +163,7 @@ interface ThemeContextType {
           };
 
 return (
-    <ThemeContext.Provider value={{ mode, setMode, toggleTheme, dataGridTableHeight, setDataGridTableHeight, dataGridColumnWidth, setDataGridColumnWidth, rowWithColumnNames, setRowWithColumnNames, trimRows, setTrimRows, optionsStartDateColumn, setOptionsStartDateColumn, optionsEndDateColumn, setOptionsEndDateColumn, optionsNameColumn, setOptionsNameColumn, optionsSurnameColumn, setOptionsSurnameColumn, optionsLastActiveTextFieldId }}>
+    <ThemeContext.Provider value={{ mode, setMode, toggleTheme, dataGridTableHeight, setDataGridTableHeight, dataGridColumnWidth, setDataGridColumnWidth, rowWithColumnNames, setRowWithColumnNames, trimRows, setTrimRows, optionsStartDateColumn, setOptionsStartDateColumn, optionsEndDateColumn, setOptionsEndDateColumn, optionsNameColumn, setOptionsNameColumn, optionsSurnameColumn, setOptionsSurnameColumn, optionsLastActiveTextFieldId, lastWorksheetStorage, setLastWorksheetStorage }}>
       <ThemeProvider theme={appTheme}>
         <CssBaseline />
         {children}

@@ -40,7 +40,7 @@ alasql.fn.REALDATEDIFF = function(date1, date2) {
 
 function SqlApp() {
 
-  const { mode, setMode, dataGridTableHeight, dataGridColumnWidth, trimRows, rowWithColumnNames, optionsNameColumn, optionsSurnameColumn, optionsStartDateColumn, optionsEndDateColumn } = useThemeContext();
+  const { mode, setMode, dataGridTableHeight, dataGridColumnWidth, trimRows, rowWithColumnNames, optionsNameColumn, optionsSurnameColumn, optionsStartDateColumn, optionsEndDateColumn, lastWorksheetStorage, setLastWorksheetStorage } = useThemeContext();
   const { modalOpen } = useModalContext();
 
   const [data, setData] = useState([]);
@@ -175,6 +175,7 @@ const alasqlRemoveDataAfterFirstEmptyRow = function (rows) {
       );
 
       updateAvailableColumns(currentWorkbook, currrentWorksheet, newCurrentWorksheetRange);
+      setLastWorksheetStorage(currrentWorksheet);
       setAlasqlQuerySource(updatedSource);
       // setCurrentWorksheetRange(newCurrentWorksheetRange);
     }
@@ -215,8 +216,15 @@ const handleFileChange = (newInputValue) => {
       // console.log(workbook.SheetNames);
       setAvailableWorkSheets(() => workbook.SheetNames);
 
-      // Set default worksheet as the last sheet
-      const defaultSheetName = workbook.SheetNames[workbook.SheetNames.length - 1];
+      let defaultSheetName = '';
+      if (lastWorksheetStorage === '' || !workbook.SheetNames.includes(lastWorksheetStorage)) {
+        defaultSheetName = workbook.SheetNames[workbook.SheetNames.length - 1];
+      }
+      else {
+        defaultSheetName = lastWorksheetStorage;
+      }
+
+      setLastWorksheetStorage(() => defaultSheetName);
       setCurrentWorksheet(() => defaultSheetName);
 
       // Get the default worksheet range e.g. A1:H100
