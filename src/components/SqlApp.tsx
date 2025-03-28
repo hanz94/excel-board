@@ -278,7 +278,14 @@ const updateAvailableColumns = (workbook, sheetName, range) => {
     return ( 
         <>
       {/* Page Wrapper */}
-      <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'space-between', flexDirection: 'column', height: '100%', p:2.5, overflow: 'auto'}}>
+      <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'space-between', flexDirection: 'column', height: '100%', p:2.5, overflow: 'auto'}} 
+      onDrop={(event) => {
+      event.preventDefault();
+      const file = event.dataTransfer.files[0];
+      handleFileChange(file);
+      }}
+      onDragOver={(event) => event.preventDefault()} 
+      >
 
       <ModalWindow />
 
